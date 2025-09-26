@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
+const{transporter}=require("../config/transport");
 require("dotenv").config();
 exports.signUp = async (req, res) => {
   try {
@@ -40,6 +41,13 @@ exports.signUp = async (req, res) => {
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
     };
+    const mailOptions={
+        from:process.env.MAIL_USER,
+        to:user.email,
+        subject:"welcome to our app",
+        text:`Hello ${user.name},\n\nWelcome to our application! We're excited to have you on board.\n\nBest regards,\nThe Team`
+    }
+    await transporter.sendMail(mailOptions);
     return res.cookie("token", token, options).status(200).json({
       success: true,
       message: "User registerd successfully",
