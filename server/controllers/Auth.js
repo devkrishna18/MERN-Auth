@@ -1,7 +1,7 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
-const{transporter}=require("../config/transport");
+const { transporter } = require("../config/transport");
 require("dotenv").config();
 exports.signUp = async (req, res) => {
   try {
@@ -41,12 +41,12 @@ exports.signUp = async (req, res) => {
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
     };
-    const mailOptions={
-        from:process.env.MAIL_USER,
-        to:user.email,
-        subject:"welcome to our app",
-        text:`Hello ${user.name},\n\nWelcome to our application! We're excited to have you on board.\n\nBest regards,\nThe Team`
-    }
+    const mailOptions = {
+      from: process.env.MAIL_USER,
+      to: user.email,
+      subject: "welcome to our app",
+      text: `Hello ${user.name},\n\nWelcome to our application! We're excited to have you on board.\n\nBest regards,\nThe Team`,
+    };
     await transporter.sendMail(mailOptions);
     return res.cookie("token", token, options).status(200).json({
       success: true,
@@ -57,7 +57,7 @@ exports.signUp = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Error in user registration",
-      console:err.message
+      console: err.message,
     });
   }
 };
@@ -131,4 +131,84 @@ exports.logoutUser = (req, res) => {
     });
   }
 };
-
+//send verify otp
+exports.sendVerifyOtp = async (req, res) => {
+  try{
+  const { userId, email } = req.body;
+  if (!userId || !email) {
+    return res.status(400).json({
+      success: false,
+      message: "All fields required",
+    });
+  }
+  const user = await User.findById(userId);
+  if (!user) {
+    return res.status(400).json({
+      success: false,
+      message: "User not found",
+    });
+  }
+  if (user.isAccountVerified === true) {
+    return res.json({
+      success: false,
+      message: "User already verified",
+    });
+  }
+  const otp = String(Math.floor(100000 + Math.random() * 900000));
+  user.verifyotp = otp;
+  user.verifyotpexpiry = Date.now() + 10 * 60 * 1000;
+  user.save();
+  const mailOptions = {
+    from: process.env.MAIL_USER,
+    to: email,
+    subject: "Account Verification OTP",
+    text: `Hello ${user.name},\n\nYour OTP for account verification is: ${otp}. This OTP is valid for 10 minutes.\n\nBest regards,\nThe Team`,
+  };
+  const mailSent = await transporter.sendMail(mailOptions);
+}
+catch(err){
+  return res.status(500).json({
+    success:false,
+    message:"Error in sending otp"
+  })
+}
+};
+//verify otp
+exports.verifyEmail = async (req, res) => {
+  try{
+  const { userId, otp } = req.body;
+  if (!userId || !otp) {
+    return res.status(400).json({
+      success: false,
+      message: "All fields required",
+    });
+  }
+  const user = await User.findById(userId);
+  if (!user) {
+    return res.status(400).json({
+      success: false,
+      message: "User not found",
+    });
+  }
+  if (user.verifyotp !== otp || user.verifyotpexpiry < Date.now()) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid or expired OTP",
+    });
+  }
+  user.isAccountVerified=true;
+  user.verifyotp="";
+  user.verifyotpexpiry=0;
+  await user.save();
+  return res.status(200).json({
+    success: true,
+    message: "Account verified successfully",
+  });
+}
+catch(err){
+  return res.status(500).json({
+    success:false,
+    message:"Error in verifying Otp"
+  })
+}
+};
