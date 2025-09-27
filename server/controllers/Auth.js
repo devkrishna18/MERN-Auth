@@ -86,7 +86,7 @@ exports.login = async (req, res) => {
       });
     }
     const payload = {
-      userId: userReg._id,
+      id: userReg._id,
       email: userReg.email,
       name: userReg.name,
     };
@@ -134,7 +134,8 @@ exports.logoutUser = (req, res) => {
 //send verify otp
 exports.sendVerifyOtp = async (req, res) => {
   try{
-  const { userId, email } = req.body;
+  const { email } = req.body;
+   const userId=req.user.id;
   if (!userId || !email) {
     return res.status(400).json({
       success: false,
@@ -165,6 +166,11 @@ exports.sendVerifyOtp = async (req, res) => {
     text: `Hello ${user.name},\n\nYour OTP for account verification is: ${otp}. This OTP is valid for 10 minutes.\n\nBest regards,\nThe Team`,
   };
   const mailSent = await transporter.sendMail(mailOptions);
+  return res.status(200).json({
+    success:true,
+    message:"Otp sent to your email",
+    info:mailSent.response
+  })
 }
 catch(err){
   return res.status(500).json({
@@ -176,7 +182,8 @@ catch(err){
 //verify otp
 exports.verifyEmail = async (req, res) => {
   try{
-  const { userId, otp } = req.body;
+  const {otp } = req.body;
+  const userId=req.user.id;
   if (!userId || !otp) {
     return res.status(400).json({
       success: false,
@@ -212,3 +219,84 @@ catch(err){
   })
 }
 };
+//reset otp mail
+exports.resetotp=async(req,res)=>{
+  try{
+    const{email}=req.body;
+    if(!email){
+      return res.status(400).json({
+        success:false,
+        message:"Email is required"
+      })
+    }
+    const user=await User.findOne({email});
+if(!user){
+  return res.status(400).json({
+    success:false,
+    message:"User not registered"
+  })
+}
+ const otp = String(Math.floor(100000 + Math.random() * 900000));
+  user.verifyotp = otp;
+  user.verifyotpexpiry = Date.now() + 10 * 60 * 1000;
+  user.save();
+const mailOptions = {
+    from: process.env.MAIL_USER,
+    to: email,
+    subject: "Password Reset OTP",
+    text: `Hello ${user.name},\n\nYour OTP for password reset is: ${otp}. This OTP is valid for 10 minutes.\n\nBest regards,\nThe Team`,
+  };
+  const mailSent = await transporter.sendMail(mailOptions);
+  return res.status(200).json({
+    success:true,
+    message:"Reset Otp sent to your email",
+    info:mailSent.response
+  })
+  }
+  catch(err){
+    return res.status(500).json({
+      success:false,
+      message:"Error in sending reset otp"
+    })
+  }
+};
+//reset password
+exports.resetPswd=async(req,res)=>{
+  try{
+    const{email,otp,newpassword}=req.body;
+    if(!email || !otp || !newpassword){
+      return res.status(400).json({
+        success:false,
+        message:"All fields are required"
+      })
+    }
+    const user=await User.findOne({email});
+    if(!user){
+      return res.status(400).json({
+        success:false,
+        message:"User not registered"
+      })
+    }
+    if(user.verifyotp!==otp||user.verifyotpexpiry<Date.now()){
+      return res.status(400).json({
+        success:false,
+        message:"Invalid or expires OTP"
+      })
+    }
+    const newpswd=await bcrypt.hash(newpassword,10);
+    user.password=newpswd;
+    user.verifyotp="";
+    user.verifyotpexpiry=0;
+    await user.save();
+    return res.status(200).json({
+      success:true,
+      message:"Password reset successfully"
+    })
+  }
+  catch(err){
+    return res.status(500).json({
+      success:false,
+      message:"Error in reseting password"
+    })
+  }
+}

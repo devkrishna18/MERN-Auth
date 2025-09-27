@@ -1,7 +1,12 @@
 const express=require("express");
 const router=express.Router();
-const {signUp,login,logoutUser}=require("../controllers/Auth");
+const {signUp,login,logoutUser,sendVerifyOtp,verifyEmail,resetotp,resetPswd}=require("../controllers/Auth");
+const {auth}=require("../middlewares/auth");
 router.post("/signUp",signUp);
 router.post("/login",login);
 router.post("/logout",logoutUser);
+router.post("/sendOtp",auth,sendVerifyOtp);
+router.post("/verifyEmail",auth,verifyEmail);
+router.post("/resetotp",resetotp);
+router.post("/resetpswd",resetPswd);
 module.exports=router;

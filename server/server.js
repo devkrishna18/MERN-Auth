@@ -12,6 +12,7 @@ app.get("/",(req,res)=>{
     res.send("API is running");
 })
 app.use("/api/auth",require("./routes/authRoute"));
+app.use("/api/user",require("./routes/userRoute"));
 app.listen(port,()=>{
     console.log(`Server is running on port ${port}`);
 })
