@@ -219,6 +219,14 @@ catch(err){
   })
 }
 };
+// Check if user is authenticated
+exports.isAuthenticated = async (req, res) => {
+  try {
+    return res.json({ success: true, message: "User is authenticated" });
+  } catch (error) {
+    return res.json({ success: false });
+  }
+};
 //reset otp mail
 exports.resetotp=async(req,res)=>{
   try{
