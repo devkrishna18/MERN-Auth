@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const { transporter } = require("../config/transport");
+const { EMAIL_VERIFY_TEMPLATE , PASSWORD_RESET_TEMPLATE}=require("../config/emailTemplates");
 require("dotenv").config();
 exports.signUp = async (req, res) => {
   try {
@@ -166,7 +167,8 @@ exports.sendVerifyOtp = async (req, res) => {
     from: process.env.MAIL_USER,
     to: email,
     subject: "Account Verification OTP",
-    text: `Hello ${user.name},\n\nYour OTP for account verification is: ${otp}. This OTP is valid for 10 minutes.\n\nBest regards,\nThe Team`,
+    // text: `Hello ${user.name},\n\nYour OTP for account verification is: ${otp}. This OTP is valid for 10 minutes.\n\nBest regards,\nThe Team`,
+    html:EMAIL_VERIFY_TEMPLATE.replace("{{otp}}",otp).replace("{{email}}",user.email)
   };
   const mailSent = await transporter.sendMail(mailOptions);
   return res.status(200).json({
@@ -258,7 +260,8 @@ const mailOptions = {
     from: process.env.MAIL_USER,
     to: email,
     subject: "Password Reset OTP",
-    text: `Hello ${user.name},\n\nYour OTP for password reset is: ${otp}. This OTP is valid for 10 minutes.\n\nBest regards,\nThe Team`,
+    // text: `Hello ${user.name},\n\nYour OTP for password reset is: ${otp}. This OTP is valid for 10 minutes.\n\nBest regards,\nThe Team`,
+    html: PASSWORD_RESET_TEMPLATE.replace("{{otp}}",otp).replace("{{email}}",user.email)
   };
   const mailSent = await transporter.sendMail(mailOptions);
   return res.status(200).json({
