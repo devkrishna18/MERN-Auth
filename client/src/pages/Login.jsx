@@ -1,14 +1,65 @@
-import React from "react";
+import React, { useContext, useState } from "react";
 import assets from "../assets/assets";
+import {useNavigate} from 'react-router-dom'
+import { AppContent } from "../context/AppContext";
+import { toast } from "react-toastify";
+import axios from "axios";
+
 function Login() {
-  const [state, setState] = React.useState("Sign Up");
+  const navigate=useNavigate();
+ const{backendurl,setisLoggedin, getUserData}=useContext(AppContent)
+  const [state, setState] =useState("Sign Up");
+  const [name,setName]= useState('');
+  const [email,setEmail]= useState('');
+  const [password,setPassword]= useState('');
+  const onSubmitHandler = async (e) => {
+  e.preventDefault();
+  try {
+    axios.defaults.withCredentials = true;
+
+    if (state === "Sign Up") {
+      const { data } = await axios.post(backendurl + "/api/auth/signUp", {
+        name,
+        email,
+        password,
+      });
+      if (data.success) {
+        setisLoggedin(true);
+         getUserData();
+        navigate("/");
+      } else {
+        toast.error(data.message);
+      }
+    } else {
+      const { data } = await axios.post(backendurl + "/api/auth/login", {
+        email,
+        password,
+      });
+
+      if (data.success) {
+        setisLoggedin(true);
+         getUserData();
+        navigate("/");
+      } else {
+        toast.error(data.message);
+      }
+    }
+  } catch (error) {
+    if (error.response && error.response.data) {
+      toast.error(error.response.data.message);
+    } else {
+      toast.error(error.message || "Something went wrong");
+    }
+  }
+};
+
   
   return (
     <div
       className="flex items-center justify-center min-h-screen
     px-6 sm:px-0 bg-gradient-to-br from-blue-200 to-purple-400"
     >
-      <img
+      <img onClick={()=>navigate('/')}
         src={assets.logo}
         alt=""
         className="absolute left-5 sm:left-20
@@ -29,13 +80,14 @@ function Login() {
             ? "create your account"
             : "Login into your account"}
         </p>
-        <form>
+        <form onSubmit={onSubmitHandler}>
           {state==='Sign Up' && ( <div
             className="mb-4 flex items-center gap-3 w-full
     px-5 py-2.5 rounded-full bg-[#333A5C]"
           >
             <img src={assets.person_icon} alt="" />
-            <input
+            <input onChange={e=>setName(e.target.value)}
+            value={name}
               className="bg-transparent outline-none"
               type="text"
               placeholder="Full Name"
@@ -47,7 +99,8 @@ function Login() {
     px-5 py-2.5 rounded-full bg-[#333A5C]"
           >
             <img src={assets.mail_icon} alt="" />
-            <input
+            <input onChange={e=>setEmail(e.target.value)}
+            value={email}
               className="bg-transparent outline-none"
               type="email"
               placeholder="Email Id"
@@ -59,14 +112,15 @@ function Login() {
     px-5 py-2.5 rounded-full bg-[#333A5C]"
           >
             <img src={assets.lock_icon} alt="" />
-            <input
+            <input onChange={e=>setPassword(e.target.value)}
+            value={password}
               className="bg-transparent outline-none"
               type="password"
               placeholder="Password"
               required
             />
           </div>
-          <p className="mb-4 text-indigo-500 cursor-pointer">Forgot Password</p>
+          <p onClick={()=>navigate('/resetpswd')} className="mb-4 text-indigo-500 cursor-pointer">Forgot Password</p>
           <button className="w-full py-2.5 rounded-full bg-gradient-to-r
           from-indigo-500 to-indigo-900 text-white font-medium cursor-pointer">{state}</button>
         </form>

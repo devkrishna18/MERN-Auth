@@ -6,7 +6,7 @@ router.post("/signUp",signUp);
 router.post("/login",login);
 router.post("/logout",logoutUser);
 router.post("/sendOtp",auth,sendVerifyOtp);
-router.post("/isAuth",auth,isAuthenticated);
+router.get("/isAuth",auth,isAuthenticated);
 router.post("/verifyEmail",auth,verifyEmail);
 router.post("/resetotp",resetotp);
 router.post("/resetpswd",resetPswd);

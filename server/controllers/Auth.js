@@ -28,7 +28,7 @@ exports.signUp = async (req, res) => {
       password: haspwd,
     });
     const payload = {
-      userId: user._id,
+      id: user._id,
       email: user.email,
       name: user.name,
     };
@@ -133,8 +133,11 @@ exports.logoutUser = (req, res) => {
 };
 //send verify otp
 exports.sendVerifyOtp = async (req, res) => {
+   console.log("req.user:", req.user);
+  console.log("req.body:", req.body);
   try{
-  const { email } = req.body;
+  console.log("req.body raw:", req.body);
+ const email = req.user.email; // comes from JWT payload
    const userId=req.user.id;
   if (!userId || !email) {
     return res.status(400).json({
@@ -173,10 +176,13 @@ exports.sendVerifyOtp = async (req, res) => {
   })
 }
 catch(err){
+  console.error("sendVerifyOtp error:", err);
   return res.status(500).json({
     success:false,
-    message:"Error in sending otp"
+    message:"Error in sending otp",
+    error: err.message
   })
+
 }
 };
 //verify otp
